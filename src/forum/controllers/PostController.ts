@@ -6,15 +6,15 @@ import {Response} from 'express';
 import CommentDto from "../dto/CommentDto";
 import {AuthMiddleware} from "../../accounting/Middleware/AuthMiddleware";
 import {CheckUserPermission} from "../../accounting/Middleware/CheckUserPermission";
-import {CheckModerator} from "../../accounting/Middleware/CheckModerator";
+import {CheckRoleMiddleware} from "../../accounting/Middleware/CheckRoleMiddleware";
+import {Roles} from "../../accounting/utils/roles";
 
 @Controller('/forum')
 export default class PostController {
 
     postService:PostService = new PostServiceImpl();
 
-    @UseBefore(AuthMiddleware)
-    @UseBefore(CheckUserPermission)
+    @UseBefore(AuthMiddleware, CheckUserPermission)
     @Post("/post/:author")
     async createPost(@Param('author') author:string, @Body() newPostDto: NewPostDto){
         return await this.postService.createPost(author,newPostDto.title , newPostDto.content, newPostDto.tags);
@@ -25,15 +25,12 @@ export default class PostController {
     async findPostById(@Param('id') id:string, @Res() res: Response){
         return await this.postService.findPostById(id).catch(err => res.status(404).send(err));
     }
-    @UseBefore(AuthMiddleware)
-    @UseBefore(CheckUserPermission)
+    @UseBefore(AuthMiddleware, CheckUserPermission)
     @Put("/post/:id")
     async updatePostById(@Param('id') id:string, @Body() newPostDto: NewPostDto, @Res() res: Response){
         return await this.postService.updatePostById(id,newPostDto.title , newPostDto.content, newPostDto.tags).catch(err => res.status(404).send(err));
     }
-    @UseBefore(AuthMiddleware)
-    @UseBefore(CheckModerator)
-    @UseBefore(CheckUserPermission)
+    @UseBefore(AuthMiddleware, CheckUserPermission, CheckRoleMiddleware(Roles.MODERATOR))
     @Delete("/post/:id")
     async removePostById(@Param('id') id:string, @Res() res: Response){
         return await this.postService.removePostById(id).catch((err: any) => res.status(404).send(err));
@@ -58,8 +55,7 @@ export default class PostController {
     async findPostsByAuthor(@Param('author') author: string, @Res() res: Response) {
         return await this.postService.findPostsByAuthor(author).catch((err: any) => res.status(404).send(err));
     }
-    @UseBefore(AuthMiddleware)
-    @UseBefore(CheckUserPermission)
+    @UseBefore(AuthMiddleware, CheckUserPermission)
     @Put('/post/:id/comment/:user')
     async addComment(@Param('id') id: string, @Param('user') user: string, @Body() commentDto: CommentDto, @Res() res: Response) {
         return await this.postService.addComment(id, user, commentDto.message).catch((err: any) => res.status(404).send(err));

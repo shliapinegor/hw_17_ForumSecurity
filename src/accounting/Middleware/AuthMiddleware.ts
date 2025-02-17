@@ -17,6 +17,7 @@ export class AuthMiddleware implements ExpressMiddlewareInterface {
             // }
             // request.user = {login, roles}
             request.user = jwt.verify(jwtToken, process.env.JWT_SECRET!) as JwtPayload;
+            // console.log(request.user)
             next();
         } catch (err){
             response.status(403).send('Invalid token')
